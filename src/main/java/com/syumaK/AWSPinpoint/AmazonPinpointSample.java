@@ -11,7 +11,30 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 import java.io.ByteArrayOutputStream;
 
+// Download JavaMail libraries from https://mvnrepository.com/artifact/javax.mail/mail
+import javax.activation.DataSource;
+import javax.activation.DataHandler;
+import javax.activation.FileDataSource;
 
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.AddressException;
+
+// Download AWS SDK libraries from https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-pinpointemail
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.pinpointemail.model.Body;
+import com.amazonaws.services.pinpointemail.model.Content;
+import com.amazonaws.services.pinpointemail.model.RawMessage;
+import com.amazonaws.services.pinpointemail.model.Destination;
+import com.amazonaws.services.pinpointemail.model.EmailContent;
+import com.amazonaws.services.pinpointemail.AmazonPinpointEmail;
+import com.amazonaws.services.pinpointemail.model.SendEmailRequest;
+import com.amazonaws.services.pinpointemail.AmazonPinpointEmailClientBuilder;
 
 
 public class AmazonPinpointSample 
@@ -52,9 +75,57 @@ public class AmazonPinpointSample
 			+ "</body>"
 			+ "</html>";
 
-	public static void main(String[] args) throws IOException 
+	public static void main(String[] args) throws AddressException, MessagingException, IOException 
 	{
 
+		Session session = Session.getDefaultInstance(new Properties());
+
+		// Create a new MimeMessage object.
+		MimeMessage message = new MimeMessage(session);
+
+		// Add subject, from and to lines.
+		message.setSubject(subject, "UTF-8");
+		message.setFrom(new InternetAddress(senderAddress));
+		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress));
+
+		// Create a multipart/alternative child container.
+		MimeMultipart msg_body = new MimeMultipart("alternative");
+
+		// Create a wrapper for the HTML and text parts.        
+		MimeBodyPart wrap = new MimeBodyPart();
+
+		// Define the text part.
+		MimeBodyPart textPart = new MimeBodyPart();
+		textPart.setContent(BODY_TEXT, "text/plain; charset=UTF-8");
+
+		// Define the HTML part.
+		MimeBodyPart htmlPart = new MimeBodyPart();
+		htmlPart.setContent(BODY_HTML,"text/html; charset=UTF-8");
+
+		// Add the text and HTML parts to the child container.
+		msg_body.addBodyPart(textPart);
+		msg_body.addBodyPart(htmlPart);
+
+		// Add the child container to the wrapper object.
+		wrap.setContent(msg_body);
+
+		// Create a multipart/mixed parent container.
+		MimeMultipart msg = new MimeMultipart("mixed");
+
+		// Add the parent container to the message.
+		message.setContent(msg);
+
+		// Add the multipart/alternative part to the message.
+		msg.addBodyPart(wrap);
+
+		// Define the attachment
+		MimeBodyPart att = new MimeBodyPart();
+		DataSource fds = new FileDataSource(ATTACHMENT);
+		att.setDataHandler(new DataHandler(fds));
+		att.setFileName(fds.getName());
+
+		// Add the attachment to the message.
+		msg.addBodyPart(att);
 
 		// Try to send the email.
 		try {
@@ -64,6 +135,26 @@ public class AmazonPinpointSample
 			System.out.println("Getting Started with Amazon PinpointEmail API "
 					+"using the AWS SDK for Java...");
 			System.out.println("===============================================\n");
+
+
+			// Instantiate an Amazon PinpointEmail client, which will make the service call with the supplied AWS credentials.
+			AmazonPinpointEmail client = AmazonPinpointEmailClientBuilder.standard()
+				.withRegion(Regions.US_EAST_1).build();
+
+			// Send the email.
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			message.writeTo(outputStream);
+			
+				  SendEmailRequest rawEmailRequest = new SendEmailRequest()
+						  .withFromEmailAddress(senderAddress)
+						  .withDestination(new Destination()
+							  .withToAddresses(toAddress)
+						  )
+						  .withContent(new EmailContent()
+								  .withRaw(new RawMessage().withData(ByteBuffer.wrap(outputStream.toByteArray())))
+						  );
+
+			client.sendEmail(rawEmailRequest);
 
 			System.out.println("Email sent!");
 			// Display an error if something goes wrong.

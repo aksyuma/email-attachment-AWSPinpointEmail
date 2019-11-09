@@ -28,7 +28,33 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/regions -->
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>regions</artifactId>
+        <version>2.9.20</version>
+    </dependency>
 
+    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-ses -->
+    <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-ses</artifactId>
+        <version>1.11.658</version>
+    </dependency>
+    
+    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-pinpointemail -->
+    <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-pinpointemail</artifactId>
+        <version>1.11.658</version>
+    </dependency>
+
+        <!-- https://mvnrepository.com/artifact/javax.mail/mail -->
+    <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>mail</artifactId>
+        <version>1.4</version>
+    </dependency>
   
   </dependencies>
 
